@@ -1,11 +1,7 @@
-// -*- C++ -*-
-//
+
 // Package:    SuSySubstructure
 // Class:      NsubjettinessProducer
-// 
-/*
 
-*/
 
  
 
@@ -58,6 +54,18 @@ NsubjettinessProducer::NsubjettinessProducer(const edm::ParameterSet& iConfig):
 {
   //produces< std::vector< reco::Jet > >(jetCollection+"-Subjets");
   produces< std::vector< math::XYZTLorentzVector > >(""); //(jetCollection+"-Subjets"); 
+
+  edm::Service<TFileService> fn;
+
+  NsubjettinessTree            = fn->make<TTree>("NsubjettinessTree","NsubjettinessTree");
+  NsubjettinessTree->Branch("tau1",&tau1);
+  NsubjettinessTree->Branch("tau2",&tau2);
+  NsubjettinessTree->Branch("tau3",&tau3);
+  NsubjettinessTree->Branch("tau4",&tau4);
+  NsubjettinessTree->Branch("n_subjets",&n_subjets);
+
+
+
 }
 
 
@@ -82,6 +90,13 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   // fill histograms for di-lepton system
 //std::cout<<"testing .."<<std::endl;
   using namespace edm;
+  using namespace std;  
+  tau1.clear();
+  tau2.clear();
+  tau3.clear();
+  tau4.clear();
+  n_subjets.clear();
+
 
   // get jet collection
   Handle< View<reco::Jet> > jetCands;
@@ -159,13 +174,22 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
 
     fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
     
+    for(unsigned int ii=0;ii<fatJets.size();ii++){
+     tau1.push_back( nSub1KT(fatJets.at(ii)) );
+     tau2.push_back( nSub2KT(fatJets.at(ii)) );
+     tau3.push_back( nSub3KT(fatJets.at(ii)) );
+     tau4.push_back( nSub4KT(fatJets.at(ii)) );
 
-    tau1 = nSub1KT(fatJets.at(0));
+
+
+
+     }
+  //  tau1 = nSub1KT(fatJets.at(0));
     
 
 
 
-    std::cout<<"tau1  = "<<tau1<<std::endl;
+   // std::cout<<"tau1  = "<<tau1<<std::endl;
 
 
 
@@ -196,6 +220,9 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
     else
       pseudoSubjets = subjetCounter_pt50.getSubjets( fatJets[ 0 ] ) ;
 
+    n_subjets.push_back(pseudoSubjets.size());
+
+
     for( unsigned int iSubjet = 0 ; iSubjet < pseudoSubjets.size() ; iSubjet++ ){
 
       math::XYZTLorentzVector p4( pseudoSubjets[iSubjet].px(), 
@@ -210,6 +237,11 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   }// end loop over jets
 
   iEvent.put(Subjets) ; //,   jetCollection+"-Subjets"   );
+
+
+
+NsubjettinessTree->Fill();
+
 
 }
 
