@@ -1,5 +1,5 @@
 #include <DataFormats/ParticleFlowCandidate/interface/PFCandidate.h>
-
+#include "TTree.h"
 #include <fastjet/ClusterSequence.hh>
 #include <fastjet/PseudoJet.hh>
 #include <fastjet/JetDefinition.hh>
@@ -44,10 +44,20 @@ private:
   double      subjetRcut;        // min delta R between subjets
   double      subjetPtImbalance; // maximum imbalance between jet and subjet 
   bool        debug;
-  double tau1;
-  double tau2;
-  double tau3;
-  double tau4;
+  TTree* NsubjettinessTree;
+
+
+//  double tau1;
+ std::vector<double > tau1;
+ std::vector<double > tau2;
+ std::vector<double > tau3;
+ std::vector<double > tau4;
+ std::vector<int> n_subjets;
+
+
+
+
+
 
 
 
@@ -59,3 +69,4 @@ private:
 
 
 };
+
