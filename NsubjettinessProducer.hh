@@ -20,9 +20,26 @@ public:
   
   
 private:
+
+
+   // struct jetKinematics {
+
+
+   // std::vector< double > pt;
+   // std::vector< double > eta;
+   // std::vector< double > mass;
+   // std::vector< double > phi;
+
+
+
+  // } 
+
+
+
   virtual void beginJob() ;
   virtual void produce(edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
+ // void addJetKinToTree( jetKinematics& jetKin, TString tag, TTree& tree );
   
   virtual void beginRun(edm::Run const&, edm::EventSetup const&);
   virtual void endRun(edm::Run const&, edm::EventSetup const&);
@@ -47,12 +64,7 @@ private:
   TTree* NsubjettinessTree;
 
 
-//  double tau1;
- std::vector<double > tau1;
- std::vector<double > tau2;
- std::vector<double > tau3;
- std::vector<double > tau4;
- std::vector<int> n_subjets;
+
 
 
 
@@ -69,4 +81,3 @@ private:
 
 
 };
-
