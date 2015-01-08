@@ -1,7 +1,4 @@
-
-// Package:    SuSySubstructure
-// Class:      NsubjettinessProducer
-
+//Bibhuprasad Mahakud
 
  
 
@@ -54,17 +51,7 @@ NsubjettinessProducer::NsubjettinessProducer(const edm::ParameterSet& iConfig):
 {
   //produces< std::vector< reco::Jet > >(jetCollection+"-Subjets");
   produces< std::vector< math::XYZTLorentzVector > >(""); //(jetCollection+"-Subjets"); 
-
-  edm::Service<TFileService> fn;
-
-  NsubjettinessTree            = fn->make<TTree>("NsubjettinessTree","NsubjettinessTree");
-  NsubjettinessTree->Branch("tau1",&tau1);
-  NsubjettinessTree->Branch("tau2",&tau2);
-  NsubjettinessTree->Branch("tau3",&tau3);
-  NsubjettinessTree->Branch("tau4",&tau4);
-  NsubjettinessTree->Branch("n_subjets",&n_subjets);
-
-
+  produces< std::vector< double > >("beta1tau1");
 
 }
 
@@ -91,17 +78,19 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
 //std::cout<<"testing .."<<std::endl;
   using namespace edm;
   using namespace std;  
-  tau1.clear();
-  tau2.clear();
-  tau3.clear();
-  tau4.clear();
+
+
+
+
+
+
   n_subjets.clear();
 
 
   // get jet collection
   Handle< View<reco::Jet> > jetCands;
   iEvent.getByLabel(jetCollection,jetCands);
-
+//  std::cout<<"Jetcollection= "<<jetCollection<<std::endl;
   // initialize objects needed for fastjet 
   // -------------------------------------
   std::vector<fastjet::PseudoJet> fatJets;
@@ -123,6 +112,10 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   // syntax is probably not right!!!!
   //std::auto_ptr< std::vector< reco::Jet > > Subjets ( new std::vector< reco::Jet > () );
   std::auto_ptr< std::vector< math::XYZTLorentzVector > > Subjets ( new std::vector< math::XYZTLorentzVector > () );
+
+  std::auto_ptr < std::vector<double> > tau1(new std::vector<double>());
+    
+
 
   if( debug ){
     std::cout << "new events" << std::endl;
@@ -166,22 +159,13 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
     fastjet::ClusterSequence cs_aktp12(constituents, aktp12);
     fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
     
-    fastjet::contrib::Nsubjettiness nSub1KT(1, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub2KT(2, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub3KT(3, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub4KT(4, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-
+    fastjet::contrib::Nsubjettiness nSub1_b1KT(1, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
+    
 
     fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
     
     for(unsigned int ii=0;ii<fatJets.size();ii++){
-     tau1.push_back( nSub1KT(fatJets.at(ii)) );
-     tau2.push_back( nSub2KT(fatJets.at(ii)) );
-     tau3.push_back( nSub3KT(fatJets.at(ii)) );
-     tau4.push_back( nSub4KT(fatJets.at(ii)) );
-
-
-
+     tau1->push_back( nSub1_b1KT(fatJets.at(ii)) );
 
      }
   //  tau1 = nSub1KT(fatJets.at(0));
@@ -237,13 +221,21 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   }// end loop over jets
 
   iEvent.put(Subjets) ; //,   jetCollection+"-Subjets"   );
+ // iEvent.put(beta1_tau1);
+  iEvent.put(tau1, "beta1tau1");
 
-
-
-NsubjettinessTree->Fill();
+//NsubjettinessTree->Fill();
 
 
 }
+
+
+
+
+
+
+
+
 
 
 // ------------ method called once each job just before starting event loop  ------------
