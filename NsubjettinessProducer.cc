@@ -1,5 +1,4 @@
-//Bibhuprasad Mahakud
- 
+//email: bmahakud@cern.ch
 
 // system include files
 #include <memory>
