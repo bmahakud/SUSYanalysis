@@ -1,3 +1,5 @@
+//Author
+//Bibhuprasad Mahakud
 //email: bmahakud@cern.ch
 
 // system include files
@@ -23,6 +25,7 @@
 
 #include <DataFormats/JetReco/interface/Jet.h>
 #include <DataFormats/ParticleFlowCandidate/interface/PFCandidate.h>
+#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
 #include <fastjet/ClusterSequence.hh>
 #include <fastjet/PseudoJet.hh>
@@ -87,10 +90,44 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   using namespace std;  
 
 
+edm::EventID eventId = iEvent.id();
+
+cout<<"Event no = "<<eventId<<endl;
+
+  //Handle <View<vector<pat::PackedCandidate> >> PFcand;
+ 
+  edm::Handle<edm::View<pat::PackedCandidate> > PFCands;
+  iEvent.getByLabel("packedPFCandidates",PFCands);
+
+   
+  std::vector<fastjet::PseudoJet> ak12Jets;
+  std::vector<fastjet::PseudoJet> particles; particles.clear();
+  fastjet::JetDefinition Jetdefak12(fastjet::antikt_algorithm, 1.2);
+
+
+   
+  for(edm::View<pat::PackedCandidate>::const_iterator iPFcand = PFCands->begin(); iPFcand != PFCands->end(); ++iPFcand){
+    
+ // cout<<"px = "<<iPFcand->px()<<endl; 
+
+   particles.push_back( fastjet::PseudoJet( iPFcand->px(),
+                                                  iPFcand->py(),
+                                                  iPFcand->pz(),
+                                                  iPFcand->energy() ) ); 
 
 
 
 
+
+
+
+   }
+
+
+
+    fastjet::ClusterSequence cs_ak12(particles, Jetdefak12);
+    ak12Jets = sorted_by_pt(cs_ak12.inclusive_jets());
+    cout<<"number ofclusterd ak12 Jets untrimmed= "<<ak12Jets.size()<<endl;
 
 
 
@@ -101,8 +138,47 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   // initialize objects needed for fastjet 
   // -------------------------------------
   std::vector<fastjet::PseudoJet> fatJets;
-  std::vector<fastjet::PseudoJet> constituents;      
+  std::vector<fastjet::PseudoJet> constituents;     
+  std::vector<fastjet::PseudoJet> TrimmedAK12Jets ;
+ 
   fastjet::JetDefinition aktp12(fastjet::antikt_algorithm, clusterRadius);
+  
+   fastjet::Filter trimmer1(fastjet::Filter(fastjet::JetDefinition(fastjet::kt_algorithm,0.2),fastjet::SelectorPtFractionMin(0.05)));
+
+  
+        std::vector<fastjet::Transformer const *> transformers;
+        transformers.push_back(&trimmer1);
+   for(unsigned int j1=0;j1<ak12Jets.size();j1++){//jet loop
+
+            int transctr = 0;
+        for ( std::vector<fastjet::Transformer const *>::const_iterator
+       itransf = transformers.begin(), itransfEnd = transformers.end();
+       itransf != itransfEnd; ++itransf ) {//transformed jet
+
+           fastjet::PseudoJet transformedJet = ak12Jets.at(j1);
+           transformedJet = (**itransf)(transformedJet);
+
+
+        if (transctr == 0){//12 Trimmer1
+
+                    TLorentzVector jet_tr_corr(transformedJet.px(),transformedJet.py(),transformedJet.pz(),transformedJet.e());
+
+                cout<<"Jet pt clustered and trimmed on the fly = "<<jet_tr_corr.Pt()<<endl;
+
+
+
+                    }//12
+
+
+else{ std::cout << "error in number of transformers" << std::endl;}
+
+        transctr++;
+
+
+
+             }//transformed jet
+       }//jet loop
+
   
   // initialize object for counting subjets
   if( debug ){
@@ -126,11 +202,27 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   std::auto_ptr < std::vector<double> > tau4(new std::vector<double>());
 
 
+    fastjet::contrib::Nsubjettiness nSub1_b1KT(1, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
+    fastjet::contrib::Nsubjettiness nSub2_b1KT(2, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
+    fastjet::contrib::Nsubjettiness nSub3_b1KT(3, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
+    fastjet::contrib::Nsubjettiness nSub4_b1KT(4, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
 
+
+   //TrimmedAK12Jets =  trimmer1( fatJets[ 0 ] )  ;
 
 
 
   
+ for(unsigned int ii=0;ii<ak12Jets.size();ii++){
+     tau1->push_back( nSub1_b1KT(ak12Jets.at(ii)) );
+     tau2->push_back( nSub2_b1KT(ak12Jets.at(ii)) );
+     tau3->push_back( nSub3_b1KT(ak12Jets.at(ii)) );
+     tau4->push_back( nSub4_b1KT(ak12Jets.at(ii)) );
+     cout<<"Untrimmed Jet Pt(clustered on the fly) = "<<ak12Jets.at(ii).pt()<<endl;
+
+
+
+     }
 
 
   if( debug ){
@@ -138,13 +230,17 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
     std::cout << "===================" << std::endl;
   }
 
+  int ak12_default=0;
   for(View<reco::Jet>::const_iterator iJet = jetCands->begin(); iJet != jetCands->end(); ++iJet){
-      
+      ak12_default=ak12_default+1;
+     std::cout << "Jet Pt( RecoJet producer module): " << iJet->pt() << std::endl;
+
+
     if ( iJet->pt() < 50. ) continue;
 
     if ( debug ) {
 
-      std::cout << "std jet pt: " << iJet->pt() << std::endl;
+    //  std::cout << "std jet pt: " << iJet->pt() << std::endl;
 
     }// end debug
 
@@ -175,28 +271,17 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
     fastjet::ClusterSequence cs_aktp12(constituents, aktp12);
     fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
     
-    fastjet::contrib::Nsubjettiness nSub1_b1KT(1, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub2_b1KT(2, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub3_b1KT(3, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
-    fastjet::contrib::Nsubjettiness nSub4_b1KT(4, fastjet::contrib::Njettiness::kt_axes, 1.0, 1.2, 1.2);
       
 //    fastjet::contrib::Nsubjettiness nSub1_b2KT(1, fastjet::contrib::Njettiness::kt_axes, 2.0, 1.2, 1.2);
  //   fastjet::contrib::Nsubjettiness nSub2_b2KT(2, fastjet::contrib::Njettiness::kt_axes, 2.0, 1.2, 1.2);
  //   fastjet::contrib::Nsubjettiness nSub3_b2KT(3, fastjet::contrib::Njettiness::kt_axes, 2.0, 1.2, 1.2);
  //   fastjet::contrib::Nsubjettiness nSub4_b2KT(4, fastjet::contrib::Njettiness::kt_axes, 2.0, 1.2, 1.2);
 
-    fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
-    
-    for(unsigned int ii=0;ii<fatJets.size();ii++){
-     tau1->push_back( nSub1_b1KT(fatJets.at(ii)) );
-     tau2->push_back( nSub2_b1KT(fatJets.at(ii)) );
-     tau3->push_back( nSub3_b1KT(fatJets.at(ii)) );
-     tau4->push_back( nSub4_b1KT(fatJets.at(ii)) );
+  //  fatJets = sorted_by_pt(cs_aktp12.inclusive_jets());
+  
 
-
-
-
-     }
+//cout<<"jet size = "<<fatJets.size()<<endl;
+  
   //  tau1 = nSub1KT(fatJets.at(0));
     
 
@@ -248,6 +333,9 @@ NsubjettinessProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
     }
 
   }// end loop over jets
+
+
+  cout<<"Default ak12 num jets trimmed ="<<ak12_default<<endl;
 
   iEvent.put(Subjets) ; //,   jetCollection+"-Subjets"   );
  // iEvent.put(beta1_tau1);
