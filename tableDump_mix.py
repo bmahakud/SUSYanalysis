@@ -85,7 +85,7 @@ def combineSamples(total , histoA , weightA , histoB , weightB ):
         total.SetBinError(i+1, error) 
 
     return total
-
+ZgamRatio_72binfrom24bin = TH1F("ZmR72", "ZmR72bin", 72, 0.5, 72.5)
 
 fGJets400_24bin = TFile("yields_GJets400HT600_RA2b_24bin.root")
 fGJets600_24bin = TFile("yields_GJets600HTinf_RA2b_24bin.root")
@@ -552,6 +552,17 @@ can6.SaveAs("ZgamRatio_HT.eps")
 can6.SaveAs("ZgamRatio_HT.png")
 can6.SaveAs("ZgamRatio_HT.pdf")
 ##==============================
+cTest1 = TCanvas("cTest1","cTest1",500,500);
+
+
+
+for bn in range(1,25):
+    for jn in range(0,3): 
+        ZgamRatio_72binfrom24bin.SetBinContent(bn+24*jn,ZgamRatio.GetBinContent(bn))
+        print "Zestimate Bin number = "
+        print bn+24*jn
+        print "getbinConetent = "
+        print ZgamRatio.GetBinContent(bn)
 
 Zestimate = TH1F(GJets_iso)
 Zestimate.SetNameTitle("Zestimate","Zestimate")
@@ -559,10 +570,30 @@ Zestimate.GetXaxis().SetTitle("i^{th} Bin")
 Zestimate.GetYaxis().SetTitle("Events")
 Zestimate.SetLineColor(6)
 Zestimate.SetLineStyle(1)
-Zestimate.Multiply( GJets_iso , ZgamRatio , 1. , 1. );
+Zestimate.Multiply( GJets_iso , ZgamRatio_72binfrom24bin , 1. , 1. );
 Zestimate.Divide( Zestimate , effAcc , 1. , 1. );
 Zestimate.Divide( Zestimate , effID , 1. , 1. );
 Zestimate.Divide( Zestimate , effISO , 1. , 1. );
+
+
+can4test = TCanvas("can4test","can4test",500,500);
+closurePad = TPad("closurePad","closurePad",0,0.3,1,1);
+closRatioPad = TPad("closRatioPad","closRatioPad",0,0,1,0.3);
+closurePad.SetBottomMargin(0);
+closRatioPad.SetTopMargin(0);
+closRatioPad.SetBottomMargin(.3);
+closurePad.Draw();
+closRatioPad.Draw();
+closurePad.SetLogy();
+closurePad.cd();
+
+
+
+
+
+
+Zestimate.Draw()
+
 
 can4 = TCanvas("can4","can4",500,500);
 closurePad = TPad("closurePad","closurePad",0,0.3,1,1);
@@ -656,6 +687,8 @@ for i in range(Zinv.GetNbinsX()):
     #veffISO.append( str(effISO.GetBinContent(i+1)) )
     #vZgamRatio.append( str(ZgamRatio.GetBinContent(i+1)) )
     #vZestimate.append( str(Zestimate.GetBinContent(i+1)) )
+
+ZgamRatio_72binfrom24bin.Draw()
 
 from print_table import *
 
