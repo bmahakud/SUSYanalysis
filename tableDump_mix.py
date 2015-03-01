@@ -554,15 +554,19 @@ can6.SaveAs("ZgamRatio_HT.pdf")
 ##==============================
 cTest1 = TCanvas("cTest1","cTest1",500,500);
 
-
+ZgamRatio_72binfrom24bin.Sumw2()
 
 for bn in range(1,25):
     for jn in range(0,3): 
         ZgamRatio_72binfrom24bin.SetBinContent(bn+24*jn,ZgamRatio.GetBinContent(bn))
+        ZgamRatio_72binfrom24bin.SetBinError(bn+24*jn,ZgamRatio.GetBinError(bn))
         print "Zestimate Bin number = "
         print bn+24*jn
         print "getbinConetent = "
         print ZgamRatio.GetBinContent(bn)
+
+
+
 
 Zestimate = TH1F(GJets_iso)
 Zestimate.SetNameTitle("Zestimate","Zestimate")
@@ -575,7 +579,7 @@ Zestimate.Divide( Zestimate , effAcc , 1. , 1. );
 Zestimate.Divide( Zestimate , effID , 1. , 1. );
 Zestimate.Divide( Zestimate , effISO , 1. , 1. );
 
-
+'''
 can4test = TCanvas("can4test","can4test",500,500);
 closurePad = TPad("closurePad","closurePad",0,0.3,1,1);
 closRatioPad = TPad("closRatioPad","closRatioPad",0,0,1,0.3);
@@ -586,13 +590,8 @@ closurePad.Draw();
 closRatioPad.Draw();
 closurePad.SetLogy();
 closurePad.cd();
-
-
-
-
-
-
-Zestimate.Draw()
+'''
+#ZgamRatio_72binfrom24bin.Draw()
 
 
 can4 = TCanvas("can4","can4",500,500);
