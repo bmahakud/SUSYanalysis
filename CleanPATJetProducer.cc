@@ -1,4 +1,3 @@
-
 // -*- C++ -*-
 //
 // Package:    SuSySubstructure
@@ -6,7 +5,10 @@
 // 
 /*
 
- Description: Produces a collection of PAT jets. Those jets are rejected from the collection if a photon > 100 GeV is found within
+ Description: Takes as cfg input a jet collection 
+ and clusters the jets into large-R anti-kt jets.
+ A collection of 4-vectors corresponding to these 
+ jets is saved to the event.
 
 */
 //
@@ -41,6 +43,7 @@ CleanPATJetProducer::CleanPATJetProducer(const edm::ParameterSet& iConfig):
   debug(iConfig.getUntrackedParameter<bool>("debug",true))
 {
   produces< std::vector< TLorentzVector > >(""); 
+  //produces< std::vector< pat::Jet > >("");
 }
 
 
@@ -64,7 +67,8 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // fill histograms for di-lepton system
   std::auto_ptr< std::vector< TLorentzVector > > purePhoton ( new std::vector< TLorentzVector > () );
-
+ // std::auto_ptr< std::vector< TLorentzVector > > part4Vec ( new std::vector< TLorentzVector > () );
+ // std::auto_ptr< std::vector< pat::Jet > > part4Vec ( new std::vector< pat::Jet > () );
 
 
 
@@ -126,14 +130,14 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
  
   if(isBarrelPhoton){
   
-  if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==true && iPhoton->sigmaIetaIeta() < 0.011){//id criterias
+  if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.011){//id criterias
    passID=true;
 
     }//id criterias
 
      } 
   else if(isEndcapPhoton){
-   if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==true && iPhoton->sigmaIetaIeta() < 0.031){//id criterias barrel
+   if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.031){//id criterias barrel
    passID=true;
 
     }//id criterias endcap
@@ -170,7 +174,7 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       passIso=false;
      }
 
-  if(isGenMatched && passAcc && passID && passIso && iPhoton->pt() > 100.0){//pure photons
+  if( passAcc && passID && passIso && iPhoton->pt() > 100.0){//pure photons
    if(iPhoton->pt() > PhotonPt){ 
     purePhoton->clear();
     TLorentzVector temp;
