@@ -1,4 +1,4 @@
-[bmahakud@cmslpc37 test]$ cat ../src/CleanPATJetProducer.cc
+
 // -*- C++ -*-
 //
 // Package:    SuSySubstructure
