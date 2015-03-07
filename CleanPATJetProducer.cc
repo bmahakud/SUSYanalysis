@@ -6,10 +6,7 @@
 // 
 /*
 
- Description: Takes as cfg input a jet collection 
- and clusters the jets into large-R anti-kt jets.
- A collection of 4-vectors corresponding to these 
- jets is saved to the event.
+ Description: Produces a collection of PAT jets. Those jets are rejected from the collection if a photon > 100 GeV is found within
 
 */
 //
