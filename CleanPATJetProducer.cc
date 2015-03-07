@@ -43,7 +43,7 @@ CleanPATJetProducer::CleanPATJetProducer(const edm::ParameterSet& iConfig):
   debug(iConfig.getUntrackedParameter<bool>("debug",true))
 {
   produces< std::vector< TLorentzVector > >(""); 
-  //produces< std::vector< pat::Jet > >("");
+  produces< std::vector< pat::Jet > >("");
 }
 
 
@@ -67,8 +67,7 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // fill histograms for di-lepton system
   std::auto_ptr< std::vector< TLorentzVector > > purePhoton ( new std::vector< TLorentzVector > () );
- // std::auto_ptr< std::vector< TLorentzVector > > part4Vec ( new std::vector< TLorentzVector > () );
- // std::auto_ptr< std::vector< pat::Jet > > part4Vec ( new std::vector< pat::Jet > () );
+  std::auto_ptr< std::vector< pat::Jet > >  patJet4Vec( new std::vector< pat::Jet > () );
 
 
 
@@ -203,7 +202,6 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   Handle< View<pat::Jet> > jetCands;
   iEvent.getByLabel(jetCollection,jetCands);
 
-  std::auto_ptr< std::vector< TLorentzVector > > part4Vec ( new std::vector< TLorentzVector > () );
 
   if( debug ){
     std::cout << "new events" << std::endl;
@@ -236,34 +234,27 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    double dR=sqrt((dEta*dEta)+(dPhi*dPhi)); 
    if(dR > 0.4 ){//deltaR cut photon and jet
-    TLorentzVector p4( iPart->px(),
-                       iPart->py(),
-                       iPart->pz(),
-                       iPart->energy()
-                       ) ;
 
-        part4Vec->push_back( p4 ) ;
+        patJet4Vec->push_back(*iPart);
+
+
          }//photon and jet
 
 
      }else if(purePhoton->size()==0){
    
-   
-    TLorentzVector p4( iPart->px(), 
-		       iPart->py(), 
-		       iPart->pz(), 
-		       iPart->energy() 
-		       ) ;
 
-    part4Vec->push_back( p4 ) ;
+    patJet4Vec->push_back(*iPart);
+
+
     }
 
 
 
   }// end loop over ak4Jets 
 
-  iEvent.put(part4Vec); 
  
+  iEvent.put(patJet4Vec); 
 }
 
 
