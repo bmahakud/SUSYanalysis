@@ -18,8 +18,6 @@
 #include "AllHadronicSUSY/TreeMaker/interface/TreeMaker.h"
 #include "DataFormats/METReco/interface/MET.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
-
-
 #include <memory>
 
 // system include files
@@ -275,6 +273,31 @@ TreeMaker::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       std::cout<<"WARNING ... "<<i<<"th variable : "<<VectorTLorentzVectorTags_[i].label()<<" is NOT valid?!"<<std::endl;
     }
   }
+
+
+  if(debug_) std::cout<<"Point k2"<<std::endl;
+  for(unsigned int i = 0; i < VectorPATJetsTags_.size(); ++i) {
+    edm::Handle<std::vector<pat::Jet> > var;
+    iEvent.getByLabel(VectorPATJetsTags_.at(i),var);
+    if( var.isValid() ) {
+      for(unsigned int j=0; j< var->size();j++){
+        VectorPATJets_.at(i).push_back(var->at(j));
+      }
+    }else{
+      std::cout<<"WARNING ... "<<i<<"th variable : "<<VectorPATJetsTags_[i].label()<<" is NOT valid?!"<<std::endl;
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
   if(debug_) std::cout<<"filling tree "<<std::endl;
   // std::cout<<"Filling tree with:"<<std::endl;
   // for(unsigned int i=0; i<RecoCandN_.size();i++)std::cout<<"RecoCand["<<i<<"] Numberofentries: "<<RecoCandN_.at(i)<<std::endl;
@@ -655,6 +678,59 @@ TreeMaker::beginJob()
     nameInTree = FinalizeName(nameInTree);
     tree_->Branch((TString)nameInTree, "std::vector<TLorentzVector>", &(VectorTLorentzVector_.at(i)), 32000, 0);
   }
+
+
+  
+
+  for(unsigned int i=0; i< VectorPATJetsNames_.size();i++)
+  {
+    std::vector<pat::Jet> vector;
+    VectorPATJets_.push_back(vector);
+        }
+        for(unsigned int i=0; i< VectorPATJetsNames_.size();i++)
+                {
+    std::string tempFull = VectorPATJetsNames_[i];
+    std::string nameInTree = VectorPATJetsNames_[i];
+    std::string tag = VectorPATJetsNames_[i];
+    if(tempFull.find("(") <tempFull.size() && tempFull.find(")") <tempFull.size())
+    {
+      tag = SeparateString(tempFull,"(").first;
+      nameInTree = SeparateString(SeparateString(tempFull,"(").second,")").first;
+    }
+    std::cout<<"VectorPATJetsNames_: tag:"<<tag<<" nameInTree: "<<nameInTree<<" originial full name: "<<tempFull<<std::endl;
+    VectorPATJetsTags_.push_back(edm::InputTag(tag));
+    if(nameInTree.find(':')<nameInTree.size())
+    {
+      nameInTree = SeparateString(nameInTree,":").second;
+    }
+    nameInTree = FinalizeName(nameInTree);
+    tree_->Branch((TString)nameInTree, "std::vector<pat::Jet>", &(VectorPATJets_.at(i)), 32000, 0);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
@@ -714,6 +790,14 @@ TreeMaker::setBranchVariablesToDefault()
   {
     VectorTLorentzVector_.at(i).clear();
   }
+
+  for(unsigned int i=0; i < VectorPATJets_.size();i++)
+  {
+    VectorPATJets_.at(i).clear();
+  }
+ 
+
+
   
   for(unsigned int i = 0; i < varsRecoCandTags_.size(); ++i) 
   {
