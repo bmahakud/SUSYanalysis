@@ -249,9 +249,9 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       double dR=sqrt((dEta*dEta)+(dPhi*dPhi));
       
- 
+ std::cout<<"delta R = "<<dR<<std::endl;
       if(dR > 0.4 ){//deltaR cut photon and jet
-      std::cout<<"delta R = "<<dR<<std::endl;  
+        
         patJet4Vec->push_back(*iPart);
        HTwithoutPhoton +=iPart->pt();
 
