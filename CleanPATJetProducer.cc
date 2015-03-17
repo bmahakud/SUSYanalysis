@@ -1,14 +1,14 @@
 // -*- C++ -*-
 //
-// Package:    SuSySubstructure
+// Package:    AllHadronicSUSY/Utils
 // Class:      CleanPATJetProducer
 // 
 /*
 
- Description: Takes as cfg input a jet collection 
- and clusters the jets into large-R anti-kt jets.
- A collection of 4-vectors corresponding to these 
- jets is saved to the event.
+ Description: Takes photons and jet collections
+ from cfg and removes all jets which match photon
+ (currently matching is done with dR<0.4 criteria) 
+ A collection of pat::Jet is saved to the event.
 
 */
 //
@@ -30,7 +30,7 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
-#include "AWhitbeck/SuSySubstructure/interface/CleanPATJetProducer.h"
+#include "AllHadronicSUSY/Utils/interface/CleanPATJetProducer.h"
 #include "AllHadronicSUSY/Utils/src/effArea.cc"
 #include "TLorentzVector.h"
 
@@ -42,8 +42,8 @@ CleanPATJetProducer::CleanPATJetProducer(const edm::ParameterSet& iConfig):
   rhoCollection(iConfig.getUntrackedParameter<edm::InputTag>("rhoCollection")),
   debug(iConfig.getUntrackedParameter<bool>("debug",true))
 {
-  produces< std::vector< TLorentzVector > >(""); 
   produces< std::vector< pat::Jet > >("");
+  produces< std::vector< pat::Photon > >("bestPhoton");
 }
 
 
@@ -65,14 +65,15 @@ void
 CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  // fill histograms for di-lepton system
-  std::auto_ptr< std::vector< TLorentzVector > > purePhoton ( new std::vector< TLorentzVector > () );
+  //initialize 'collection' to be saved in event
   std::auto_ptr< std::vector< pat::Jet > >  patJet4Vec( new std::vector< pat::Jet > () );
+  std::auto_ptr< std::vector< pat::Photon > > purePhoton( new std::vector< pat::Photon > () );
 
+  HTwithPhoton=0;
+  HTwithoutPhoton=0;
 
 
   using namespace edm;
- // std::cout<<"test . . . "<<std::endl; 
   Handle< View< pat::Photon> > photonCands;
   iEvent.getByLabel( photonCollection ,photonCands);
 
@@ -82,6 +83,13 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   if( debug ) std::cout << "got photon collection" << std::endl;
 
+  // - - - - - - - - - - - - - - - - - - - - 
+  // Initializing effective area to be used 
+  // for rho corrections to the photon isolation
+  // variables.  -- currently these are taken from
+  // the 2012 EGamma PAG recommendations and need 
+  // to be updated
+  // - - - - - - - - - - - - - - - - - - - - 
   effArea* effAreas = new effArea();
   effAreas->addEffA( 0.0,   1.0,   0.012, 0.030, 0.148 );
   effAreas->addEffA( 1.0,   1.479, 0.010, 0.057, 0.130 );
@@ -91,170 +99,179 @@ CleanPATJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   effAreas->addEffA( 2.3,   2.4,   0.020, 0.039, 0.260 );
   effAreas->addEffA( 2.4,   99.,   0.012, 0.072, 0.266 );
   double PhotonPt=0;
+  
+  // - - - - - - - - - - - - - - - - - - - - 
+  // loop over all photons to find the best photon
+  // 'pure' photon.  This is defined to be the 
+  // highest pt photon that passes all the iso
+  // and id cuts.  
+  // - - - - - - - - - - - - - - - - - - - - 
   for( View< pat::Photon >::const_iterator iPhoton = photonCands->begin();
-        iPhoton != photonCands->end();
-        ++iPhoton){//photon loop starts
+       iPhoton != photonCands->end();
+       ++iPhoton){//photon loop starts
  
-  isBarrelPhoton=false;
-  isEndcapPhoton=false;
-  isGenMatched=false;
-  passID=false;
-  passIso=false;
-  passAcc=false;
-
- 
- 
-   double PhEta=iPhoton->eta();
-   if(fabs(PhEta) < 1.4442  ){
-    isBarrelPhoton=true;
-     }
-   else if(fabs(PhEta)>1.566 && fabs(PhEta)<2.5){
-     isEndcapPhoton=true;
-     }
-   else {
     isBarrelPhoton=false;
     isEndcapPhoton=false;
+    isGenMatched=false;
+    passID=false;
+    passIso=false;
+    passAcc=false;
 
-     }
-
-  if(isBarrelPhoton || isEndcapPhoton){
-     passAcc=true;
-      }
-  
- // bool genPhoton,isgenMatched;
-   isGenMatched=iPhoton->genPhoton() != NULL;
-
-  
-  
  
-  if(isBarrelPhoton){
-  
-  if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.011){//id criterias
-   passID=true;
-
-    }//id criterias
-
-     } 
-  else if(isEndcapPhoton){
-   if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.031){//id criterias barrel
-   passID=true;
-
-    }//id criterias endcap
-
-   }
- else {
-  passID=false;
-  }
-
-
-
-
-  
  
-     chIso = effAreas->rhoCorrectedIso(  pfCh  , iPhoton->chargedHadronIso() , iPhoton->eta() , rho );
-     nuIso = effAreas->rhoCorrectedIso(  pfNu  , iPhoton->neutralHadronIso() , iPhoton->eta() , rho );
-     gamIso = effAreas->rhoCorrectedIso( pfGam , iPhoton->photonIso()        , iPhoton->eta() , rho );
-   
-     
-   
-   if(isBarrelPhoton){
-       if(chIso <0.7 && nuIso <  (0.4 + 0.04*(iPhoton->pt()))  && gamIso < ( 0.5 + 0.005*(iPhoton->pt())) ){
-         passIso=true;      
-        }
-     
-      }
-   else if(isEndcapPhoton){
-      if(chIso <0.5 && nuIso <  (1.5 + 0.04*(iPhoton->pt()))  && gamIso < ( 1.0 + 0.005*(iPhoton->pt())) ){
-         passIso=true;
-        }
-
-     }
-   else{
-      passIso=false;
-     }
-
-  if( passAcc && passID && passIso && iPhoton->pt() > 100.0){//pure photons
-   if(iPhoton->pt() > PhotonPt){ 
-    purePhoton->clear();
-    TLorentzVector temp;
-    temp.SetPtEtaPhiE(iPhoton->pt(),
-                      iPhoton->eta(),
-                      iPhoton->phi(),
-                      iPhoton->energy());
-    purePhoton->push_back( temp );
-    PhotonPt=iPhoton->pt();
-   
+    double PhEta=iPhoton->eta();
+    if(fabs(PhEta) < 1.4442  ){
+      isBarrelPhoton=true;
+    }
+    else if(fabs(PhEta)>1.566 && fabs(PhEta)<2.5){
+      isEndcapPhoton=true;
+    }
+    else {
+      isBarrelPhoton=false;
+      isEndcapPhoton=false;
 
     }
+
+    if(isBarrelPhoton || isEndcapPhoton){
+      passAcc=true;
+    }
+  
+    // bool genPhoton,isgenMatched;
+    isGenMatched=iPhoton->genPhoton() != NULL;
+  
+    // apply id cuts
+    if(isBarrelPhoton){
+  
+      if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.011){//id criterias barrel
+	passID=true;
+
+      }//id criterias
+
+    } 
+    else if(isEndcapPhoton){
+      if(iPhoton->hadTowOverEm() < 0.05 && iPhoton->hasPixelSeed()==false && iPhoton->sigmaIetaIeta() < 0.031){//id criteria endcap
+	passID=true;
+
+      }//id criterias endcap
+
+    }
+    else {
+      passID=false;
+    }
+ 
+    // compute the rho corrected isolation variable using
+    // the effective areas defined above
+    chIso = effAreas->rhoCorrectedIso(  pfCh  , iPhoton->chargedHadronIso() , iPhoton->eta() , rho );
+    nuIso = effAreas->rhoCorrectedIso(  pfNu  , iPhoton->neutralHadronIso() , iPhoton->eta() , rho );
+    gamIso = effAreas->rhoCorrectedIso( pfGam , iPhoton->photonIso()        , iPhoton->eta() , rho );
+   
+    // apply isolation cuts
+    if(isBarrelPhoton){
+      if(chIso <0.7 && nuIso <  (0.4 + 0.04*(iPhoton->pt()))  && gamIso < ( 0.5 + 0.005*(iPhoton->pt())) ){
+	passIso=true;      
+      }
+     
+    }
+    else if(isEndcapPhoton){
+      if(chIso <0.5 && nuIso <  (1.5 + 0.04*(iPhoton->pt()))  && gamIso < ( 1.0 + 0.005*(iPhoton->pt())) ){
+	passIso=true;
+      }
+
+    }
+    else{
+      passIso=false;
+    }
+
+    // check if photons is a good photon
+    if( passAcc && passID && passIso && iPhoton->pt() > 100.0){//pure photons
+      // make sure only the highest pt photon is used
+      if(iPhoton->pt() > PhotonPt){ 
+	purePhoton->clear();
+	TLorentzVector temp;
+	temp.SetPtEtaPhiE(iPhoton->pt(),
+			  iPhoton->eta(),
+			  iPhoton->phi(),
+			  iPhoton->energy());
+	purePhoton->push_back( *iPhoton );
+	PhotonPt=iPhoton->pt();
+
+      }
     
-    
-    }//pure photons
+    }//pure photons    
 
-    
+  }//photon loop
 
-    }//photon loop
-
-
-  cout<<"number of photons = "<<purePhoton->size()<<endl;
-
-
+  if( debug ) cout<<"number of photons = "<<purePhoton->size()<<endl;
+  
   // get jet collection
   Handle< View<pat::Jet> > jetCands;
   iEvent.getByLabel(jetCollection,jetCands);
-
 
   if( debug ){
     std::cout << "new events" << std::endl;
     std::cout << "===================" << std::endl;
   }
 
+
+  
+
+
+
+
+  // - - - - - - - - - - - - - - - - - - - - 
+  // loop over jet collection and match jets
+  // with the 'pure' photon selected above
+  // - - - - - - - - - - - - - - - - - - - -   
   for(View<pat::Jet>::const_iterator iPart = jetCands->begin(); iPart != jetCands->end(); ++iPart){//loop over ak4Jets
-      
+                 
+       HTwithPhoton +=iPart->pt();
+    
     if( debug ) {
-	       std::cout << "input  p_{mu}: " 
-		      << iPart->px() << " " 
-		      << iPart->py() << " " 
-		      << iPart->pz() << " " 
-		      << iPart->energy() << std::endl;
+      std::cout << "input  p_{mu}: " 
+		<< iPart->px() << " " 
+		<< iPart->py() << " " 
+		<< iPart->pz() << " " 
+		<< iPart->energy() << std::endl;
     }// end debug
 
-   if(purePhoton->size()==1){
-   double PhEta=purePhoton->at(0).Eta();  
-   double PhPhi=purePhoton->at(0).Phi();
+    if(purePhoton->size()==1){
+      double PhEta=purePhoton->at(0).eta();  
+      double PhPhi=purePhoton->at(0).phi();
   
-   double jetEta=iPart->eta();
-   double jetPhi=iPart->phi();
+      double jetEta=iPart->eta();
+      double jetPhi=iPart->phi();
 
-   double dEta=PhEta-jetEta;
-   double dPhi=PhPhi-jetPhi;
-   if (fabs(PhPhi-jetPhi) > 3.14159){
-    dPhi= 2*3.14159-(PhPhi-jetPhi );
-    }
-  
+      double dEta=PhEta-jetEta;
+      double dPhi=PhPhi-jetPhi;
+      if (fabs(PhPhi-jetPhi) > 3.14159){
+	dPhi= 2*3.14159-(PhPhi-jetPhi );
+      }
 
-   double dR=sqrt((dEta*dEta)+(dPhi*dPhi)); 
-   if(dR > 0.4 ){//deltaR cut photon and jet
-
+      double dR=sqrt((dEta*dEta)+(dPhi*dPhi));
+      
+ 
+      if(dR > 0.4 ){//deltaR cut photon and jet
+      std::cout<<"delta R = "<<dR<<std::endl;  
         patJet4Vec->push_back(*iPart);
+       HTwithoutPhoton +=iPart->pt();
 
+      }//photon and jet
 
-         }//photon and jet
+    }else if(purePhoton->size()==0){
 
-
-     }else if(purePhoton->size()==0){
-   
-
-    patJet4Vec->push_back(*iPart);
-
-
+      patJet4Vec->push_back(*iPart);
+      HTwithoutPhoton +=iPart->pt();
     }
-
-
 
   }// end loop over ak4Jets 
+  
+  iEvent.put(purePhoton, "bestPhoton" ); 
+  iEvent.put(patJet4Vec ); 
 
- 
-  iEvent.put(patJet4Vec); 
+  std::cout<<"HT with Photon = "<<HTwithPhoton<<std::endl;
+  std::cout<<"HT with out Photon = "<<HTwithoutPhoton<<std::endl;
+
+
 }
 
 
