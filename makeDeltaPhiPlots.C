@@ -82,26 +82,26 @@ float HTt3, MHTt3,minDeltaPhiNt3,minDeltaPhiNnoPhotonst3,DeltaPhi1noPhotonst3,De
   t4->SetBranchAddress("minDeltaPhiNnoPhotons",&minDeltaPhiNnoPhotonst4);
 
 
-  TH1F* dPhi1binG400 = new TH1F("dPhi1binG400","dPhi1bin",100,0.0,10);
-  TH1F* dPhi2binG400 = new TH1F("dPhi2binG400","dPhi2bin",100,0.0,10);
-  TH1F* dPhi3binG400 = new TH1F("dPhi3binG400","dPhi3bin",100,0.0,10);
-  TH1F* mindPhiNbinG400 = new TH1F("mindPhiNbinG400","mindPhiNbin",300,0.0,30);
+  TH1F* dPhi1binG400 = new TH1F("dPhi1binG400","dPhi1bin",200,-10,10);
+  TH1F* dPhi2binG400 = new TH1F("dPhi2binG400","dPhi2bin",200,-10,10);
+  TH1F* dPhi3binG400 = new TH1F("dPhi3binG400","dPhi3bin",200,-10,10);
+  TH1F* mindPhiNbinG400 = new TH1F("mindPhiNbinG400","mindPhiNbin",300,-50,50);
 
 
-  TH1F* dPhi1binG600 = new TH1F("dPhi1binG600","dPhi1bin",100,0.0,10);
-  TH1F* dPhi2binG600 = new TH1F("dPhi2binG600","dPhi2bin",100,0.0,10);
-  TH1F* dPhi3binG600 = new TH1F("dPhi3binG600","dPhi3bin",100,0.0,10);
-  TH1F* mindPhiNbinG600 = new TH1F("mindPhiNbinG600","mindPhiNbin",300,0.0,30);
+  TH1F* dPhi1binG600 = new TH1F("dPhi1binG600","dPhi1bin",200,-10,10);
+  TH1F* dPhi2binG600 = new TH1F("dPhi2binG600","dPhi2bin",200,-10,10);
+  TH1F* dPhi3binG600 = new TH1F("dPhi3binG600","dPhi3bin",200,-10,10);
+  TH1F* mindPhiNbinG600 = new TH1F("mindPhiNbinG600","mindPhiNbin",300,-50,50);
 
-  TH1F* dPhi1binZ400 = new TH1F("dPhi1binZ400","dPhi1bin",100,0.0,10);
-  TH1F* dPhi2binZ400 = new TH1F("dPhi2binZ400","dPhi2bin",100,0.0,10);
-  TH1F* dPhi3binZ400 = new TH1F("dPhi3binZ400","dPhi3bin",100,0.0,10);
-  TH1F* mindPhiNbinZ400 = new TH1F("mindPhiNbinZ400","mindPhiNbin",300,0.0,30);
+  TH1F* dPhi1binZ400 = new TH1F("dPhi1binZ400","dPhi1bin",200,-10,10);
+  TH1F* dPhi2binZ400 = new TH1F("dPhi2binZ400","dPhi2bin",200,-10,10);
+  TH1F* dPhi3binZ400 = new TH1F("dPhi3binZ400","dPhi3bin",200,-10,10);
+  TH1F* mindPhiNbinZ400 = new TH1F("mindPhiNbinZ400","mindPhiNbin",300,-50,50);
 
-  TH1F* dPhi1binZ600 = new TH1F("dPhi1binZ600","dPhi1bin",100,0.0,10);
-  TH1F* dPhi2binZ600 = new TH1F("dPhi2binZ600","dPhi2bin",100,0.0,10);
-  TH1F* dPhi3binZ600 = new TH1F("dPhi3binZ600","dPhi3bin",100,0.0,10);
-  TH1F* mindPhiNbinZ600 = new TH1F("mindPhiNbinZ600","mindPhiNbin",300,0.0,30);
+  TH1F* dPhi1binZ600 = new TH1F("dPhi1binZ600","dPhi1bin",200,-10,10);
+  TH1F* dPhi2binZ600 = new TH1F("dPhi2binZ600","dPhi2bin",200,-10,10);
+  TH1F* dPhi3binZ600 = new TH1F("dPhi3binZ600","dPhi3bin",200,-10,10);
+  TH1F* mindPhiNbinZ600 = new TH1F("mindPhiNbinZ600","mindPhiNbin",300,-50,50);
 
 
 
