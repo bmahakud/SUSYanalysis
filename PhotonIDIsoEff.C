@@ -379,7 +379,7 @@ setTDRStyle();
 
 TH1F *hIDeff =new TH1F("hIDeff","Photon ID variable  efficiencies ",4,0,4);
 
-
+TH1F *hPhPt =new TH1F("hPhPt","Photon Pt distribution ",100,0,1000);
 
 
 int NumEvents=300000;
@@ -392,24 +392,56 @@ int NumofPtcutPhotons=0;
 int NumofsigmaIetaIetaPhotonsEB=0; 
 int NumofsigmaIetaIetaPhotonsEC=0; 
 
+///Isolation variables
+int NumofpfChargedIsoRhoCorrEB=0;
+int NumofpfNeutralIsoRhoCorrEB=0;
+int NumofpfGammaIsoRhoCorrEB=0;
 
+int NumofpfChargedIsoRhoCorrEC=0;
+int NumofpfNeutralIsoRhoCorrEC=0;
+int NumofpfGammaIsoRhoCorrEC=0;
 
 
 for( int iEv1 = 0 ; iEv1<tG400->GetEntries(); iEv1++){//event loop
 tG400->GetEntry(iEv1);
 if(iEv1==NumEvents)break;
-//if( iEv1 % 5000 == 0 ) cout << "event : " << iEv1 << endl;
+if( iEv1 % 5000 == 0 ) cout << "event : " << iEv1 << endl;
 //cout<<"Photon size = "<<photon_genMatchedG400->size()<<endl;
 if(HTG400 > 500 && MHTG400 >200 && NJetsG400 >= 4  && LeptonsG400==0){//base line conditions
 
-
 for(int iPh=0;iPh<photon_genMatchedG400->size();iPh++){//photon loop
 if(photon_genMatchedG400->at(iPh) ==1){//gen match condition
+
+hPhPt->Fill(photonProdG400->at(iPh).Pt());
+
+
+
 NumofGenMatchedPhotons=NumofGenMatchedPhotons+1;
 double pixelseed =photon_hasPixelSeedG400->at(iPh);
 double HadOverEM = photon_hadTowOverEMG400->at(iPh);
 double SigmaIeta = photon_sigmaIetaIetaG400->at(iPh);
 double EBphotons =photon_isEBG400->at(iPh);
+//cout<<"test1 "<<endl;
+double pfChargedIsoRhoCorr = photon_pfChargedIsoRhoCorrG400->at(iPh);
+double pfNeutralIsoRhoCorr = photon_pfNeutralIsoRhoCorrG400->at(iPh);
+double pfGammaIsoRhoCorr = photon_pfGammaIsoRhoCorrG400->at(iPh);
+//cout<<"test2 "<<endl;
+
+/*
+  if( isEB->at(iPh) ){
+      
+      if( pfChargedIsoRhoCorr->at(iPh) > 0.7 ) return false;
+      if( pfNeutralIsoRhoCorr->at(iPh) > (0.4 + 0.04*fourVec->at(iPh).Pt()) ) return false;
+      if( pfGammaIsoRhoCorr->at(iPh) > (0.5 + 0.005*fourVec->at(iPh).Pt()) ) return false;
+      
+    }else{
+      
+      if( pfChargedIsoRhoCorr->at(iPh) > 0.5 ) return false;
+      if( pfNeutralIsoRhoCorr->at(iPh) > (1.5 + 0.04*fourVec->at(iPh).Pt()) ) return false;
+      if( pfGammaIsoRhoCorr->at(iPh) > (1.0 + 0.005*fourVec->at(iPh).Pt()) ) return false;
+*/
+
+
 
 if(pixelseed !=1){NumofhasnotPixelSeedPhotons=NumofhasnotPixelSeedPhotons+1;}
 
@@ -417,19 +449,67 @@ if(HadOverEM < 0.05){NumofhadTowOverEMPhotons=NumofhadTowOverEMPhotons+1;}
 
 
 if(EBphotons==1){
+
+
 NumofEBGenMatchedPhotons=NumofEBGenMatchedPhotons+1;
 if(SigmaIeta < 0.011){
 NumofsigmaIetaIetaPhotonsEB=NumofsigmaIetaIetaPhotonsEB+1;
 }
+//iso vars
+if(pfChargedIsoRhoCorr < 0.7){
+NumofpfChargedIsoRhoCorrEB=NumofpfChargedIsoRhoCorrEB+1;
+}
 
-}else if(EBphotons !=1){
+if(pfNeutralIsoRhoCorr < (0.4 + 0.04*photonProdG400->at(iPh).Pt()) ){
+NumofpfNeutralIsoRhoCorrEB=NumofpfNeutralIsoRhoCorrEB+1;
+
+}
+
+
+if(pfGammaIsoRhoCorr <  (0.5 + 0.005*photonProdG400->at(iPh).Pt())){
+NumofpfGammaIsoRhoCorrEB=NumofpfGammaIsoRhoCorrEB+1;
+}
+
+
+
+
+
+}else if(EBphotons !=1){//barrel
 
 NumOfECGenMatchedPhotons=NumOfECGenMatchedPhotons+1;
 if(SigmaIeta < 0.031){
 NumofsigmaIetaIetaPhotonsEC=NumofsigmaIetaIetaPhotonsEC+1;
 }
 
+
+
+
+if(pfChargedIsoRhoCorr < 0.5){
+NumofpfChargedIsoRhoCorrEC=NumofpfChargedIsoRhoCorrEC+1;
 }
+
+if(pfNeutralIsoRhoCorr < (1.5 + 0.04*photonProdG400->at(iPh).Pt()) ){
+NumofpfNeutralIsoRhoCorrEC=NumofpfNeutralIsoRhoCorrEC+1;
+
+}
+
+
+if(pfGammaIsoRhoCorr <  (1.0 + 0.005*photonProdG400->at(iPh).Pt())){
+NumofpfGammaIsoRhoCorrEC=NumofpfGammaIsoRhoCorrEC+1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+}//barrel
 
 
 
@@ -458,30 +538,79 @@ float HaddEff=(float)NumofhadTowOverEMPhotons/(float)NumofGenMatchedPhotons;
 float EBIetaEff=(float)NumofsigmaIetaIetaPhotonsEB/(float)NumofEBGenMatchedPhotons;
 float ECIetaEff=(float)NumofsigmaIetaIetaPhotonsEC/(float)NumOfECGenMatchedPhotons;
 
+
+float ChIsoEffEB=(float)NumofpfChargedIsoRhoCorrEB/(float)NumofEBGenMatchedPhotons;
+float NeoIsoEffEB= (float)NumofpfNeutralIsoRhoCorrEB/(float)NumofEBGenMatchedPhotons;
+float GammaIsoEffEB= (float)NumofpfGammaIsoRhoCorrEB/(float)NumofEBGenMatchedPhotons;
+
+float ChIsoEffEC=(float)NumofpfChargedIsoRhoCorrEC/(float)NumOfECGenMatchedPhotons;
+float NeoIsoEffEC= (float)NumofpfNeutralIsoRhoCorrEC/(float)NumOfECGenMatchedPhotons;
+float GammaIsoEffEC= (float)NumofpfGammaIsoRhoCorrEC/(float)NumOfECGenMatchedPhotons;
+
+
+
 float Xar[4];
 float YEff[4];
 float Yerr[4];
 
+float XarIso[6];
+float YEffIso[6];
+float YerrIso[6];
 
 Xar[0]=0.5;
 Xar[1]=1.5;
 Xar[2]=2.5;
 Xar[3]=3.5;
 
+XarIso[0]=0.5;
+XarIso[1]=1.5;
+XarIso[2]=2.5;
+XarIso[3]=3.5;
+XarIso[4]=4.5;
+XarIso[5]=5.5;
+
+
+
+
+
 YEff[0]=pixelEff;
 YEff[1]=HaddEff;
 YEff[2]=EBIetaEff;
 YEff[3]=ECIetaEff;
 
+YEffIso[0]=ChIsoEffEB;
+YEffIso[1]=NeoIsoEffEB;
+YEffIso[2]=GammaIsoEffEB;
+YEffIso[3]=ChIsoEffEC;
+YEffIso[4]=NeoIsoEffEC;
+YEffIso[5]=GammaIsoEffEC;
 
-Yerr[0]=sqrt((pixelEff*(1-pixelEff))/NumofGenMatchedPhotons);
-Yerr[1]=sqrt((HaddEff*(1-HaddEff))/NumofGenMatchedPhotons);
-Yerr[2]=sqrt((EBIetaEff*(1-EBIetaEff))/NumofEBGenMatchedPhotons);
-Yerr[3]=sqrt((ECIetaEff*(1-ECIetaEff))/NumOfECGenMatchedPhotons);
+
+
+
+Yerr[0]=sqrt((pixelEff*(1+pixelEff))/NumofGenMatchedPhotons);
+Yerr[1]=sqrt((HaddEff*(1+HaddEff))/NumofGenMatchedPhotons);
+Yerr[2]=sqrt((EBIetaEff*(1+EBIetaEff))/NumofEBGenMatchedPhotons);
+Yerr[3]=sqrt((ECIetaEff*(1+ECIetaEff))/NumOfECGenMatchedPhotons);
+
+
+YerrIso[0]=sqrt((ChIsoEffEB*(1+ChIsoEffEB))/NumofEBGenMatchedPhotons);
+YerrIso[1]=sqrt((NeoIsoEffEB*(1+NeoIsoEffEB))/NumofEBGenMatchedPhotons);
+YerrIso[2]=sqrt((GammaIsoEffEB*(1+GammaIsoEffEB))/NumofEBGenMatchedPhotons);
+YerrIso[3]=sqrt((ChIsoEffEC*(1+ChIsoEffEC))/NumOfECGenMatchedPhotons);
+YerrIso[4]=sqrt((NeoIsoEffEC*(1+NeoIsoEffEC))/NumOfECGenMatchedPhotons);
+YerrIso[5]=sqrt((GammaIsoEffEC*(1+GammaIsoEffEC))/NumOfECGenMatchedPhotons);
+
+
 
 TGraphErrors *gh =new TGraphErrors(4,Xar,YEff,0,Yerr);
 gh->SetMarkerColor(kBlue);
 gh->SetMarkerStyle(21);
+
+
+
+
+
 
 
 
@@ -509,8 +638,38 @@ TText *t = new TText();
 
 
 
+TCanvas *cc=new TCanvas("cc","Photon Isolation Eff");
+
+TGraphErrors *ghIso =new TGraphErrors(6,XarIso,YEffIso,0,YerrIso);
+ghIso->SetMarkerColor(kBlue);
+ghIso->SetMarkerStyle(21);
+
+ghIso->Draw("AP");
+
+const Int_t nxIso = 6;
+char *monthsIso[nxIso] = {"ChIsoEB","NeoIsoEB","GammaIsoEB","ChIsoEC","NeoIsoEC","GammaIsoEC"};
 
 
+TText *tIso = new TText();
+   tIso->SetTextAlign(32);
+   tIso->SetTextSize(0.025);
+   tIso->SetTextFont(72);
+   char *labelsIso[4] = {"PixelSeed(0)","HaddOverEM","SigmaIeta_EB","SigmaIeta_EC"};
+
+   tIso->DrawText(1,0.5,"ChIso_EB");
+   tIso->DrawText(2,0.5,"NeoIso_EB");
+   tIso->DrawText(3,0.5,"GammaIso_EB");
+   tIso->DrawText(4,0.5,"ChIso_EC");
+   tIso->DrawText(5,0.5,"NeoIso_EC");
+   tIso->DrawText(6,0.5,"GammaIso_EC");
+
+
+
+
+
+TCanvas *cPhPt=new TCanvas("cPhPt","Photon Pt");
+cPhPt->cd();
+hPhPt->Draw();
 
 
 
