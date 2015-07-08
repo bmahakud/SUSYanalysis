@@ -71,7 +71,8 @@ pEff2->SetWeight(200);
    c1->cd();
    pEff1->Draw("AP");
 
-
+   c2->cd();
+   pEff2->Draw("AP");
 
 
 
