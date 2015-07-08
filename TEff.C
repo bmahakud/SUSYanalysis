@@ -63,7 +63,7 @@ pEff1->SetWeight(100);
 pEff2->SetWeight(200);
 
 
-pEff1->Add(pEff2);
+//pEff1->Add(pEff2);
 
 
 
